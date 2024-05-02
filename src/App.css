@@ -1,0 +1,361 @@
+#root {
+  text-align: center;
+}
+
+body{
+  background:#1D1F21;
+}
+
+.Navbar{
+  background:#27292C;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position: fixed;
+  width: 100%;
+  z-index: 100;
+  left:0;
+  height:6vh;
+  box-sizing: border-box;
+  /* To comply with safari mobile browser's keyboard, ensure this element moves upward if the keyboard is present */
+  top: env(safe-area-inset-top, 0);
+}
+
+.Navbar button{
+  width:100%;
+  height:100%;
+  background:none;
+  /* No text wrap */
+  white-space: nowrap;
+  color:white;
+}
+
+.Navbar button:active, .Navbar button:focus, .Navbar button:hover{
+  outline:none;
+}
+
+.Navbar .ProgressBar{
+  position:absolute;
+  bottom:0;
+  left:0;
+  height:1px;
+  display:inline-block;
+  background:#00FF00;
+  /* Give it a glow */
+  box-shadow: 0 0 5px #00FF00;
+  width:100px;
+}
+
+.SearchBar{
+  /* Remove default input styling */
+  border: none;
+  background: none;
+  color: white;
+  font-size: 1.4em;
+  background:#27292C;
+  padding-left:2%;
+  display:flex;
+  justify-content:space-between;
+  position: fixed;
+  width: 100%;
+  z-index: 100;
+  left:0;
+  height:6vh;
+  box-sizing: border-box;
+  transition: height 0.3s ease-in-out, font-size 0.3s ease-in-out;
+  /* To comply with safari mobile browser's keyboard, ensure this element moves upward if the keyboard is present */
+  bottom: env(safe-area-inset-bottom, 0);
+}
+
+.SearchBar:active, .SearchBar:focus{
+  outline:none;
+  height:10vh;
+  font-size: 1.5em;
+}
+
+.SearchResults{
+  padding-top:7vh;
+  padding-bottom:11vh;
+  text-align:center;
+  user-select: none;
+}
+
+.MovieCard{
+  display:inline-block;
+  width:15vw;
+  min-width:175px;
+  height:auto;
+  margin:2%;
+  position:relative;
+  background-position: center;
+  background-size: cover;
+  overflow:hidden;
+  border-radius: 15px;
+  transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
+  cursor:pointer;
+  /* Give every movie card a nice drop shadow */
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  /* Give it a default background color */
+  background-color: #333;
+  aspect-ratio: 2/3 !important;
+}
+
+.MovieCard:hover{
+  /* When hovering over a movie card, make the shadow a bit more pronounced */
+  box-shadow: 0 0 15px rgba(0,0,0,0.7);
+  transform: scale(1.05);
+}
+
+.MovieTitle{
+  position:absolute;
+  bottom:0;
+  left:0;
+  width:100%;
+  /* Give this a nice gradient background where the bottom is darkest and it fades to transparent at the top */
+  background: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0));
+  margin:0;
+  padding:10px;
+  box-sizing: border-box;
+  /* Disable text selection */
+  user-select: none;
+  /* Make font size scale with movie card size */
+  font-size: 1.5vh;
+}
+
+.MovieTitle.Centered{
+  text-align:center;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  background: none;
+}
+
+.MovieDetailsModal{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  width:90%;
+  height:85%;
+  background: #27292C;
+  flex-direction: column;
+  align-items:left;
+  text-align: left;
+  z-index: 99;
+  border-radius: 15px;
+  /* Give it a box shadow */
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  overflow:hidden;
+}
+
+.MovieDetailsModalHeader{
+  position:relative;
+  width:100%;
+  height:20%;
+}
+
+.MovieDetailsModalHeaderTitle{
+  position:absolute;
+  bottom:0;
+  left:0;
+  margin:0;
+  /* Give it the same gradient background */
+  background: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0));
+  padding: 2%;
+  width:100%;
+  text-align:left;
+  box-sizing: border-box;
+}
+
+.MovieDetailsModalHeaderImage{
+  width:100%;
+  height:100%;
+  background-size: cover;
+  background-position: center;
+  border-radius: 15px 15px 0 0;
+  position:absolute;
+  top:0%;
+  left:0;
+  z-index:-1;
+}
+
+.MovieDetailsModalBody{
+  padding: 3%;
+  padding-top:1%;
+  overflow-y: auto;
+  height: calc(100% - 20%);
+}
+
+.MovieDetailsModalBody .MovieCard{
+  width:20%;
+}
+
+.MovieDetailsModalCloseButton{
+  position:absolute;
+  top:2px;
+  right:2px;
+  padding:15px;
+  padding-top:5px;
+  cursor:pointer;
+  z-index: 200;
+  font-size: 1.5em;
+}
+
+.MovieDetailsModalRecommendedMovies{
+  text-align: center;
+}
+
+.TorrentItem{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:5px;
+  margin:5px;
+  border-radius: 5px;
+  background: #333;
+  cursor:pointer;
+}
+
+.GenreList{
+  padding-top: 6vh;
+  text-align: center;
+  padding-bottom:10vh;
+  background: #333;
+}
+
+.GenreItem{
+  /* Remove default button styling */
+  border: none;
+  background: none;
+  color: white;
+  border-radius: 0%;
+  outline:none;
+  display:inline-block;
+  padding:5px;
+  padding-right:20px;
+  padding-left:20px;
+  background: #333;
+  cursor:pointer;
+  width:100%;
+  margin:0;
+}
+
+.TorrentQueueModal{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  width:90%;
+  height:85%;
+  background: #27292C;
+  align-items:left;
+  text-align: left;
+  z-index: 99;
+  border-radius: 15px;
+  box-sizing: border-box;
+  padding:2%;
+  display: block;
+  /* Give it a box shadow */
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  overflow: hidden;
+  /* This is a floating modal, i need its insides to scroll if it overflows */
+  overflow-y: auto;
+}
+
+.TorrentQueueModalCloseButton{
+  position:absolute;
+  top:2px;
+  right:2px;
+  padding:15px;
+  padding-top:5px;
+  cursor:pointer;
+  z-index: 200;
+  font-size: 1.5em;
+}
+
+.TorrentQueueModalBody{
+  padding: 3%;
+  padding-top:1%;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.TorrentQueueItem{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:5px;
+  margin:5px;
+  border-radius: 5px;
+  background: #333;
+  cursor:pointer;
+  position: relative;
+  width:100%;
+  height:10vh;
+  box-sizing: border-box;
+  margin-top:2%;
+}
+
+.TorrentQueueItemProgressBar{
+  height:100%;
+  display:inline-block;
+  position: absolute;
+  top:0;
+  left:0;
+  height:1px;
+  /* Set the background to a nice green */
+  background: #00FF00;
+  /* Give it a glow */
+  box-shadow: 0 0 5px #00FF00;
+  transition: width 5s ease-in-out;
+}
+
+.TorrentQueueItemName{
+  position:absolute;
+  top:10%;
+  left:1%;
+}
+
+.TorrentQueueDLSpeed{
+  margin:0;
+  position:absolute;
+  bottom:0%;
+  left:1%;
+}
+
+.TorrentQueueETA{
+  margin:0;
+  position:absolute;
+  bottom:2%;
+  right:1%;
+}
+
+
+.Pagination{
+  display:flex;
+  justify-content:space-evenly;
+  align-items:center;
+  padding:5px;
+  margin:5px;
+  border-radius: 5px;
+  user-select: none;
+}
+
+.Pagination button{
+  cursor:pointer;
+}
+
+/* If we're in landscape, make the moviedetailsmodal max width more like 50% */
+@media (orientation: landscape) {
+  .MovieDetailsModal{
+    /* Give it a big box shadow so it looks like its floating higher */
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    width:60%;
+  }
+  .MovieDetailsModalHeader{
+    height:35%;
+  }
+  .MovieDetailsModalBody{
+    height: calc(100% - 35%);
+  }
+}
