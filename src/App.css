@@ -24,13 +24,14 @@ body {
 .Navbar {
   background: #27292C;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
+  flex-direction: column;
   align-items: center;
   position: fixed;
   width: 100%;
   z-index: 100;
   left: 0;
-  height: 6vh;
+  height: 12vh;
   box-sizing: border-box;
   /* To comply with safari mobile browser's keyboard, ensure this element moves upward if the keyboard is present */
   top: env(safe-area-inset-top, 0);
@@ -39,13 +40,51 @@ body {
   -webkit-backdrop-filter: blur(5px);
 }
 
-.Navbar button {
+.NavbarLinkActive {
+  color: #00FF00 !important;
+}
+
+.NavbarBigLinks {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+
+.NavbarSmallLinks {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.NavbarSmallLinks button,
+.NavbarSmallLinks a,
+.NavbarBigLinks button,
+.NavbarBigLinks a {
   width: 100%;
   height: 100%;
   background: none;
   /* No text wrap */
   white-space: nowrap;
   color: white;
+  border: none;
+  border-radius: 0;
+  transition: background 0.3s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.Navbar a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .Navbar button:active,
@@ -84,7 +123,7 @@ body {
   left: 0;
   height: 6vh;
   box-sizing: border-box;
-  transition: height 0.3s ease-in-out, font-size 0.3s ease-in-out;
+  transition: height 0.3s ease-in-out, font-size 0.3s ease-in-out, bottom .2s ease-in-out;
   /* To comply with safari mobile browser's keyboard, ensure this element moves upward if the keyboard is present */
   bottom: env(safe-area-inset-bottom, 0);
   /* Give a nice box shadow above so it looks like its floating */
@@ -101,9 +140,9 @@ body {
   font-size: 1.5em;
 }
 
-.SearchErrorText{
+.SearchErrorText {
   text-align: center;
-  width:100%;
+  width: 100%;
   /* This text should be centered in the screen */
   position: absolute;
   top: 50%;
@@ -112,7 +151,7 @@ body {
 }
 
 .SearchResults {
-  padding-top: 7vh;
+  padding-top: 12vh;
   padding-bottom: 11vh;
   text-align: center;
   user-select: none;
@@ -120,9 +159,11 @@ body {
   padding-right: 0;
   max-width: 100vw;
   overflow-x: hidden;
+  overflow-y: overlay;
+  position: relative;
 }
 
-.SearchResults h1 {
+.SearchResultsHeader {
   margin-top: 2%;
   margin-bottom: 5%;
 }
@@ -199,7 +240,7 @@ body {
   text-align: center;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) !important;
   background: none;
   opacity: 1 !important;
   width: 100%;
@@ -210,31 +251,32 @@ body {
   font-size: 2em;
   background: rgba(0, 0, 0, 0.7);
   user-select: none;
+  margin-top: 0;
 }
 
 .MovieDetailsModal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 85%;
   background: #27292C;
-  flex-direction: column;
-  align-items: left;
+  /* background:rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px); */
   text-align: left;
-  z-index: 99;
-  border-radius: 15px;
   /* Give it a box shadow */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   user-select: none;
+  margin-top: 12vh;
+  position: relative;
+  padding-bottom: 10vh;
+  width: 100%;
+  min-width: 100%;
+  min-width: 100vw;
+  max-width: 100vw;
 }
 
 .MovieDetailsModalHeader {
   position: relative;
   width: 100%;
-  height: 30%;
+  height: 30vh;
+  z-index: 1;
 }
 
 .MovieDetailsModalHeaderTitle {
@@ -256,7 +298,7 @@ body {
   height: 100%;
   background-size: cover;
   background-position: center;
-  border-radius: 15px 15px 0 0;
+  /* border-radius: 15px 15px 0 0; */
   position: absolute;
   top: 0%;
   left: 0;
@@ -278,7 +320,7 @@ body {
   width: 20%;
 }
 
-.MovieDetailsModalCloseButton {
+.MovieDetailsModalCloseButtdon {
   position: absolute;
   height: 4%;
   bottom: 0;
@@ -299,11 +341,27 @@ body {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
-  min-height:50px;
+  min-height: 50px;
+}
+
+.MovieDetailsModalCloseButton {
+  position: fixed;
+  bottom: 12vh;
+  right: 5vh;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  z-index: 2000;
+  padding: 2%;
+  padding-top: 1%;
+  padding-bottom: 1%;
+  box-sizing: border-box;
+  border-radius: 15px;
+  transition: background 0.3s ease-in-out;
+  cursor: pointer;
 }
 
 .MovieDetailsModalCloseButton:hover {
-  height: 6%;
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .MovieDetailsModalDownloadContainer {
@@ -319,49 +377,49 @@ body {
   margin-bottom: 2%;
 }
 
+.TorrentList {
+  max-width: 100%;
+  overflow: hidden;
+  position: relative;
+  max-width: 100%;
+  /* Ensure this is not larger than the parent container */
+  overflow-x: hidden;
+  overflow-y: overlay;
+}
+
 .TorrentItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 5px;
-  margin: 5px;
-  border-radius: 5px;
   background: #333;
   cursor: pointer;
   font-size: 1em;
-  /* Wrap with elipses when its too long */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  height: auto;
+  width: 100%;
+  /* Make sure this doesnt grow larger than parent container */
+  max-width: 100%;
+  /* Make sure this doesnt force parent container to expand either */
+  box-sizing: border-box;
   transition: background 0.3s ease-in-out, transform 0.3s ease-in-out;
+  border-bottom: 1px solid white;
 }
 
 .TorrentItem:hover {
   background: #444;
-  transform: scale(1.05);
 }
 
 .TorrentItemName {
-  padding: 5px;
-  /* Wrap with elipses when overflowing */
-  white-space: nowrap;
+  /* Newline if text overflows container */
+  white-space: pre-wrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-  /* Make this take up two thirds of the flex box */
-  flex: 2;
-}
-
-.TorrentItemSeedCount {
-  margin-left: 10%;
-  padding: 5px;
+  display: block;
+  margin-bottom: 2%;
 }
 
 .GenreList {
-  padding-top: 6vh;
+  padding-top: 12vh;
   text-align: center;
   padding-bottom: 10vh;
   background: #333;
-  z-index:1000;
+  z-index: 1000;
 }
 
 .GenreItem {
@@ -380,21 +438,21 @@ body {
   width: 100%;
   margin: 0;
   padding: 5%;
-  z-index:2;
+  z-index: 2;
 }
 
 .TorrentQueueModal {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  height: 85%;
-  background: #27292C;
+  top: 12vh;
+  width: 100%;
+  height: calc(100% - 22vh);
+  /* background: #27292C; */
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   align-items: left;
   text-align: left;
   z-index: 99;
-  border-radius: 15px;
   box-sizing: border-box;
   padding: 2%;
   display: block;
@@ -416,7 +474,7 @@ body {
 }
 
 .TorrentQueueModalCloseButton {
-  position: absolute;
+  /* position: absolute; */
   height: 4%;
   bottom: 0;
   left: 0;
@@ -427,16 +485,14 @@ body {
   width: 100%;
   text-align: center;
   /* Give it an above drop shadow */
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   transition: height 0.3s ease-in-out, background 0.3s ease-in-out;
   display: flex;
   justify-content: center;
   align-items: center;
   /* Backdrop filter so things behind it are blurred */
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  min-height:50px;
+  min-height: 50px;
+  border-bottom: 1px solid white;
+  margin-bottom: 4%;
 }
 
 .TorrentQueueModalCloseButton:hover {
@@ -502,30 +558,61 @@ body {
 
 .Pagination button {
   cursor: pointer;
-  width:25%;
+  width: 25%;
+
 }
 
 /* If we're in landscape, make the moviedetailsmodal max width more like 50% */
 @media (orientation: landscape) {
   .MovieDetailsModal {
-    /* Give it a big box shadow so it looks like its floating higher */
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
     width: 60%;
+    margin: auto;
+    margin-top: 15vh;
+    margin-bottom: 10vh;
+    border-radius: 15px;
+    min-width: 50%;
+
   }
 
   .MovieDetailsModalHeader {
-    height: 35%;
+    height: 40vh;
     transition: height 0.5s ease-in-out;
     cursor: pointer;
   }
 
   .MovieDetailsModalHeader:hover {
-    height: 80%;
+    height: 75vh;
   }
 
-  .MovieDetailsModalBody {
-    height: calc(100% - 35%);
-    padding: 2%;
+  .MovieDetailsModalHeaderImage {
+    border-radius: 15px 15px 0 0;
+  }
+
+  .Navbar a:hover {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+  }
+
+  .Navbar button:active,
+  .Navbar button:focus,
+  .Navbar button:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .TorrentQueueModal {
+    border-radius: 15px;
+  }
+
+  /* If Navbar is hovered, reveal navbar small links, which otherwise should be hidden */
+  /* Small links should have a height of 0 initially, and when navbar is hovered it gets 100% height */
+  .Navbar:hover .NavbarSmallLinks {
+    height: 100%;
+  }
+
+  .NavbarSmallLinks {
+    height: 0;
+    overflow: hidden;
+    transition: height 0.3s ease-in-out;
   }
 }
 
