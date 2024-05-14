@@ -6,8 +6,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import { MovieDb } from 'moviedb-promise'
 import { useParams } from 'react-router-dom';
@@ -17,13 +15,15 @@ const moviedb = new MovieDb(import.meta.env.VITE_API_KEY)
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [search_box_text, set_search_box_text] = useState('')
-  const [search_timeout, set_search_timeout] = useState(null)
-  const [selected_movie, set_selected_movie] = useState(null)
-  const [show_torrent_queue, set_show_torrent_queue] = useState(false)
-  const [torrent_queue_data, set_torrent_queue_data] = useState([])
-  const [update_torrent_queue_timer, set_update_torrent_queue_timer] = useState(null)
-  const [genre_list, set_genre_list] = useState([])
+  const [search_box_text, set_search_box_text] = useState('');
+  const [search_timeout, set_search_timeout] = useState(null);
+  const [selected_movie, set_selected_movie] = useState(null);
+  const [show_torrent_queue, set_show_torrent_queue] = useState(false);
+  const [torrent_queue_data, set_torrent_queue_data] = useState([]);
+  const [update_torrent_queue_timer, set_update_torrent_queue_timer] = useState(null);
+  const [genre_list, set_genre_list] = useState([]);
+  const [owned_movie_list, set_owned_movie_list] = useState([]);
+  const [last_search_url, set_last_search_url] = useState(null); // This value is set when we navigate to a search page, weather its query search, or genre search, or top_rated, etc
   const tv_genre_list = [
     {
       "id": 10759,
@@ -92,92 +92,136 @@ function App() {
   ]
   const movie_genre_list = [
     {
-        "id": 28,
-        "name": "Action"
+      "id": 28,
+      "name": "Action"
     },
     {
-        "id": 12,
-        "name": "Adventure"
+      "id": 12,
+      "name": "Adventure"
     },
     {
-        "id": 16,
-        "name": "Animation"
+      "id": 16,
+      "name": "Animation"
     },
     {
-        "id": 35,
-        "name": "Comedy"
+      "id": 35,
+      "name": "Comedy"
     },
     {
-        "id": 80,
-        "name": "Crime"
+      "id": 80,
+      "name": "Crime"
     },
     {
-        "id": 99,
-        "name": "Documentary"
+      "id": 99,
+      "name": "Documentary"
     },
     {
-        "id": 18,
-        "name": "Drama"
+      "id": 18,
+      "name": "Drama"
     },
     {
-        "id": 10751,
-        "name": "Family"
+      "id": 10751,
+      "name": "Family"
     },
     {
-        "id": 14,
-        "name": "Fantasy"
+      "id": 14,
+      "name": "Fantasy"
     },
     {
-        "id": 36,
-        "name": "History"
+      "id": 36,
+      "name": "History"
     },
     {
-        "id": 27,
-        "name": "Horror"
+      "id": 27,
+      "name": "Horror"
     },
     {
-        "id": 10402,
-        "name": "Music"
+      "id": 10402,
+      "name": "Music"
     },
     {
-        "id": 9648,
-        "name": "Mystery"
+      "id": 9648,
+      "name": "Mystery"
     },
     {
-        "id": 10749,
-        "name": "Romance"
+      "id": 10749,
+      "name": "Romance"
     },
     {
-        "id": 878,
-        "name": "Science Fiction"
+      "id": 878,
+      "name": "Science Fiction"
     },
     {
-        "id": 10770,
-        "name": "TV Movie"
+      "id": 10770,
+      "name": "TV Movie"
     },
     {
-        "id": 53,
-        "name": "Thriller"
+      "id": 53,
+      "name": "Thriller"
     },
     {
-        "id": 10752,
-        "name": "War"
+      "id": 10752,
+      "name": "War"
     },
     {
-        "id": 37,
-        "name": "Western"
+      "id": 37,
+      "name": "Western"
     }
-]
+  ]
+
+  // Startup functions
+  useEffect(() => {
+    get_torrents_progress();
+    get_owned_movies();
+    // Add an event listener for ctrl + f, which will focus the search bar
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key == 'f') {
+        e.preventDefault();
+        document.querySelector('.SearchBar').focus()
+      }
+    })
+    return () => {
+      clearTimeout(search_timeout);
+      // Remove the event listener when the component is unmounted
+      window.removeEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key == 'f') {
+          e.preventDefault();
+          document.querySelector('.SearchBar').focus()
+        }
+      })
+    }
+  }, [])
+
+  const get_owned_movies = () => {
+    fetch('http://192.168.1.217:6970/owned_list')
+      .then(res => res.json())
+      .then(data => {
+        console.log("Owned Movie List:")
+        console.log(data)
+        set_owned_movie_list(data)
+      })
+  }
+
+  const update_owned_list = (id) => {
+    console.log("Adding movie to owned list: ", id)
+    fetch('http://192.168.1.217:6970/update_owned_list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ movie_id: id })
+    })
+      .then(res => res.json())
+      .then(data => {
+        set_owned_movie_list(data)
+      })
+  }
+
   const handle_search_box_update = (e) => {
     // Function that fires when the search bar has a keyup event, it should wait two seconds before calling the api
     set_search_box_text(e.target.value)
     clearTimeout(search_timeout)
   }
-
-  useEffect(() => {
-    get_torrents_progress()
-    return () => clearTimeout(search_timeout)
-  }, [])
 
   const close_torrent_queue = () => {
     set_show_torrent_queue(false)
@@ -211,6 +255,7 @@ function App() {
         set_selected_movie={set_selected_movie}
         location={location}
         navigate={navigate}
+        last_search_url={last_search_url}
       />
 
       {/* Search bar */}
@@ -219,10 +264,9 @@ function App() {
         set_search_box_text={set_search_box_text}
         navigate={navigate}
         handle_search_box_update={handle_search_box_update}
+        location={location}
+        set_last_search_url={set_last_search_url}
       />
-
-      {/* Modals */}
-      {show_torrent_queue ? <TorrentQueueModal close_torrent_queue={close_torrent_queue} set_show_torrent_queue={set_show_torrent_queue} torrent_queue_data={torrent_queue_data} /> : null}
 
       <AnimatedRoutes
         navigate={navigate}
@@ -234,12 +278,20 @@ function App() {
         show_torrent_queue={show_torrent_queue}
         tv_genre_list={tv_genre_list}
         movie_genre_list={movie_genre_list}
+        torrent_queue_data={torrent_queue_data}
+        update_owned_list={update_owned_list}
+        owned_movie_list={owned_movie_list}
+        set_last_search_url={set_last_search_url}
+        last_search_url={last_search_url}
       />
     </>
   )
 }
 
 function SearchBar(props) {
+  if (props.location.pathname.includes("torrents")) {
+    return <div></div>
+  }
   return (
     <input
       autoCorrect='off'
@@ -249,7 +301,7 @@ function SearchBar(props) {
       onChange={props.handle_search_box_update}
       // Add an enter key listener to call the search_movie_db method
       onKeyPress={(e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && props.search_box_text.length > 0) {
           e.target.blur();
           // Url encode the search box text
           let search_query = encodeURIComponent(props.search_box_text)
@@ -268,81 +320,101 @@ function SearchBar(props) {
 
 function AnimatedRoutes(props) {
   return (
-    <AnimatePresence>
-      <Routes>
-        <Route path="/" element={<RootRedirector navigate={props.navigate} />} />
-        <Route path="/:media_type" element={<RootRedirector navigate={props.navigate} />} />
-        <Route path="/:media_type/search/:search_query/:page" element={
-          <SearchResults
-            close_torrent_queue={props.close_torrent_queue}
-            search_type={"search"}
-            set_selected_movie={props.set_selected_movie}
-            selected_movie={props.selected_movie}
-            moviedb={props.moviedb}
-            set_search_box_text={props.set_search_box_text}
-            navigate={props.navigate}
-            show_torrent_queue={props.show_torrent_queue}
-          />}
-        />
-        <Route path="/:media_type/top_rated/:page" element={
-          <SearchResults
-            close_torrent_queue={props.close_torrent_queue}
-            search_type={"top_rated"}
-            set_selected_movie={props.set_selected_movie}
-            selected_movie={props.selected_movie}
-            moviedb={props.moviedb}
-            set_search_box_text={props.set_search_box_text}
-            navigate={props.navigate}
-            show_torrent_queue={props.show_torrent_queue}
-          />}
-        />
-        <Route path="/:media_type/popular/:page" element={
-          <SearchResults
-            close_torrent_queue={props.close_torrent_queue}
-            search_type={"popular"}
-            set_selected_movie={props.set_selected_movie}
-            selected_movie={props.selected_movie}
-            moviedb={props.moviedb}
-            set_search_box_text={props.set_search_box_text}
-            navigate={props.navigate}
-            show_torrent_queue={props.show_torrent_queue}
-          />}
-        />
-        <Route path="/:media_type/genre/:genre_id/:page" element={
-          <SearchResults
-            close_torrent_queue={props.close_torrent_queue}
-            search_type={"genre"}
-            set_selected_movie={props.set_selected_movie}
-            selected_movie={props.selected_movie}
-            moviedb={props.moviedb}
-            set_search_box_text={props.set_search_box_text}
-            navigate={props.navigate}
-            show_torrent_queue={props.show_torrent_queue}
-            tv_genre_list={props.tv_genre_list}
-            movie_genre_list={props.movie_genre_list}
-          />}
-        />
-        <Route path="/:media_type/genres" element={
-          <GenreList
-            close_torrent_queue={props.close_torrent_queue}
-            set_search_box_text={props.set_search_box_text}
-            set_selected_movie={props.set_selected_movie}
-            selected_movie={props.selected_movie}
-            show_torrent_queue={props.show_torrent_queue}
-          />}
-        />
-        <Route path="/:media_type/details/:id" element={
-          <MovieDetailsModal
-            close_torrent_queue={props.close_torrent_queue}
-            set_selected_movie={props.set_selected_movie}
-            selected_movie={props.selected_movie}
-            show_torrent_queue={props.show_torrent_queue}
-            moviedb={props.moviedb}
-            navigate={props.navigate}
-          />}
-        />
-      </Routes>
-    </AnimatePresence>
+    <Routes location={location} key={location.pathname}>
+      <Route path="/" element={<RootRedirector navigate={props.navigate} />} />
+      <Route path="/:media_type" element={<RootRedirector navigate={props.navigate} />} />
+      <Route path="/:media_type/search/:search_query/:page" element={
+        <SearchResults
+          close_torrent_queue={props.close_torrent_queue}
+          search_type={"search"}
+          set_selected_movie={props.set_selected_movie}
+          selected_movie={props.selected_movie}
+          moviedb={props.moviedb}
+          set_search_box_text={props.set_search_box_text}
+          navigate={props.navigate}
+          show_torrent_queue={props.show_torrent_queue}
+          update_owned_list={props.update_owned_list}
+          owned_movie_list={props.owned_movie_list}
+          set_last_search_url={props.set_last_search_url}
+        />}
+      />
+      <Route path="/:media_type/top_rated/:page" element={
+        <SearchResults
+          close_torrent_queue={props.close_torrent_queue}
+          search_type={"top_rated"}
+          set_selected_movie={props.set_selected_movie}
+          selected_movie={props.selected_movie}
+          moviedb={props.moviedb}
+          set_search_box_text={props.set_search_box_text}
+          navigate={props.navigate}
+          show_torrent_queue={props.show_torrent_queue}
+          update_owned_list={props.update_owned_list}
+          owned_movie_list={props.owned_movie_list}
+          set_last_search_url={props.set_last_search_url}
+        />}
+      />
+      <Route path="/:media_type/popular/:page" element={
+        <SearchResults
+          close_torrent_queue={props.close_torrent_queue}
+          search_type={"popular"}
+          set_selected_movie={props.set_selected_movie}
+          selected_movie={props.selected_movie}
+          moviedb={props.moviedb}
+          set_search_box_text={props.set_search_box_text}
+          navigate={props.navigate}
+          show_torrent_queue={props.show_torrent_queue}
+          update_owned_list={props.update_owned_list}
+          set_last_search_url={props.set_last_search_url}
+          owned_movie_list={props.owned_movie_list}
+        />}
+      />
+      <Route path="/:media_type/genre/:genre_id/:page" element={
+        <SearchResults
+          close_torrent_queue={props.close_torrent_queue}
+          search_type={"genre"}
+          set_selected_movie={props.set_selected_movie}
+          selected_movie={props.selected_movie}
+          moviedb={props.moviedb}
+          set_search_box_text={props.set_search_box_text}
+          navigate={props.navigate}
+          show_torrent_queue={props.show_torrent_queue}
+          tv_genre_list={props.tv_genre_list}
+          movie_genre_list={props.movie_genre_list}
+          update_owned_list={props.update_owned_list}
+          owned_movie_list={props.owned_movie_list}
+          set_last_search_url={props.set_last_search_url}
+        />}
+      />
+      <Route path="/:media_type/genres" element={
+        <GenreList
+          close_torrent_queue={props.close_torrent_queue}
+          set_search_box_text={props.set_search_box_text}
+          set_selected_movie={props.set_selected_movie}
+          selected_movie={props.selected_movie}
+          show_torrent_queue={props.show_torrent_queue}
+        />}
+      />
+      <Route path="/:media_type/details/:id" element={
+        <MovieDetailsModal
+          close_torrent_queue={props.close_torrent_queue}
+          set_selected_movie={props.set_selected_movie}
+          selected_movie={props.selected_movie}
+          show_torrent_queue={props.show_torrent_queue}
+          moviedb={props.moviedb}
+          navigate={props.navigate}
+          update_owned_list={props.update_owned_list}
+          owned_movie_list={props.owned_movie_list}
+          last_search_url={props.last_search_url}
+        />}
+      />
+      <Route path="/torrents" element={
+        <TorrentQueueModal
+          close_torrent_queue={props.close_torrent_queue}
+          set_show_torrent_queue={props.set_show_torrent_queue}
+          torrent_queue_data={props.torrent_queue_data}
+        />}
+      />
+    </Routes>
   )
 }
 
@@ -362,6 +434,7 @@ function SearchResults(props) {
     props.close_torrent_queue()
     props.set_search_box_text('')
     props.set_selected_movie(null)
+    props.set_last_search_url(location.pathname)
     switch (props.search_type) {
       case "search":
         search_movie_db(search_query, page)
@@ -387,9 +460,22 @@ function SearchResults(props) {
         .searchTv({ query: search_query, page: page_num })
         .then((res) => {
           console.log(res)
-          set_search_results(res.results)
-          set_current_page(res.page)
-          set_total_pages(res.total_pages)
+
+          // If the search results are empty, we should search by movie instead, simply redirecting to the same url but with /movies instead of /tv
+          // We also need to make sure that a loop isn't happeneing, we will append redirect=true to the url, and if we see that, it means that we already tried searching the other media type, so just show the empty results
+          if (res.results.length == 0) {
+            if (location.search.includes("redirect=true")) {
+              set_search_results([])
+              set_current_page(1)
+              set_total_pages(1)
+            } else {
+              props.navigate(`/movies/search/${search_query}/${page_num}?redirect=true`)
+            }
+          } else {
+            set_search_results(res.results)
+            set_current_page(res.page)
+            set_total_pages(res.total_pages)
+          }
         })
         .catch(console.error)
     }
@@ -398,9 +484,22 @@ function SearchResults(props) {
         .searchMovie({ query: search_query, page: page_num })
         .then((res) => {
           console.log(res)
-          set_search_results(res.results)
-          set_current_page(res.page)
-          set_total_pages(res.total_pages)
+          // If the search results are empty, we should search by tv instead, simply redirecting to the same url but with /tv instead of /movies
+          // We also need to make sure that a loop isn't happeneing, we will append redirect=true to the url, and if we see that, it means that we already tried searching the other media type, so just show the empty results
+
+          if (res.results.length == 0) {
+            if (location.search.includes("redirect=true")) {
+              set_search_results([])
+              set_current_page(1)
+              set_total_pages(1)
+            } else {
+              props.navigate(`/tv/search/${search_query}/${page_num}?redirect=true`)
+            }
+          } else {
+            set_search_results(res.results)
+            set_current_page(res.page)
+            set_total_pages(res.total_pages)
+          }
         })
         .catch(console.error)
     }
@@ -582,10 +681,10 @@ function SearchResults(props) {
 
   return (
     <motion.div className="SearchResults"
-      initial={{ filter: "blur(10px)", opacity: 0 }}
-      animate={{ filter: "blur(0px)", opacity: 1 }}
-      exit={{ filter: "blur(10px)", opacity: 0 }}
-      transition={{ duration: .5, type: "easeInOut" }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: .5 }}
       onClick={() => {
         if (props.selected_movie != null) {
           props.set_selected_movie(null)
@@ -604,7 +703,7 @@ function SearchResults(props) {
         {/* Then, if we're on popular, show a smaller text next to it that says "Top Rated", which acts as a link to the top rated search type. Do this vice versa as well */}
       </h1>
       {search_results.map((movie, index) => {
-        return <MovieCard navigate={props.navigate} media_type={media_type} set_selected_movie={props.set_selected_movie} key={index} movie={movie} />
+        return <MovieCard update_owned_list={props.update_owned_list} owned_movie_list={props.owned_movie_list} navigate={props.navigate} media_type={media_type} set_selected_movie={props.set_selected_movie} key={index} movie={movie} />
       })}
 
       {total_pages > 1 && <div className="Pagination">
@@ -687,13 +786,26 @@ function Navbar(props) {
 
         {
           // If the current location is /:media_type/details/:id, we should display a back button
-          props.location.pathname.includes("details") ?
-            <button onClick={() => {
-              props.navigate(-1);
-            }}>Back</button> : null
+          (props.location.pathname.includes("details") || props.location.pathname.includes("torrents")) ?
+            <>
+              <button onClick={() => {
+                props.navigate(-1);
+              }}>Back</button>
+              <button onClick={() => {
+                if (props.last_search_url != null) {
+                  console.log("Navigating to: ", props.last_search_url)
+                  props.navigate(props.last_search_url)
+                } else {
+                  props.navigate(
+                    props.location.pathname.includes("tv") ? "/tv/popular/1" : "/movies/popular/1"
+                  )
+
+                }
+              }}>Back To Search</button>
+            </> : null
         }
         {
-          props.location.pathname.includes("details") == false ?
+          (props.location.pathname.includes("details") == false && props.location.pathname.includes("torrents") == false) ?
             <><NavLink
               // If We're currently on the tv media_type, this should be highlighted, do this by adding a class
               // If we're not on the tv media_type, we should not add a class
@@ -704,16 +816,15 @@ function Navbar(props) {
                 to="/movies/popular/1">Movies</NavLink>
 
               {/* Button to check torrents progress */}
-              <a onClick={() => {
-                props.set_selected_movie(null)
-                props.set_show_torrent_queue(true)
-              }}>Torrents</a>
+              <NavLink
+                to="/torrents"
+              >Torrents</NavLink>
 
             </> : null
         }
       </div>
       {/* This second half is a smaller navbar with Top-Rated and Popular links for this media_type */}
-      {props.location.pathname.includes("details") == false ?
+      {(props.location.pathname.includes("details") == false && props.location.pathname.includes("torrents") == false) ?
         <div className="NavbarSmallLinks">
           {/* Add a className to each link that matches the current page, i.e. if we're on popular, give it the "NavbarLinkActive" class */}
           <NavLink
@@ -759,7 +870,6 @@ function GenreList(props) {
           set_genres(res.genres)
           props.set_search_box_text('')
           console.log(res)
-          props.set_genre_list(res.genres)
         })
         .catch(console.error)
     }
@@ -772,12 +882,12 @@ function GenreList(props) {
   return (
     <motion.div
       className="GenreList"
-      initial={{ filter: "blur(10px)", opacity: 0 }}
-      animate={{ filter: "blur(0px)", opacity: 1 }}
-      exit={{ filter: "blur(10px)", opacity: 0 }}
-      transition={{ duration: .5, type: "easeInOut" }}
-
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: .5 }}
     >
+      <h1>Genres</h1>
       {genres.map((genre, index) => {
         return <GenreItem
           search_by_genre={props.search_by_genre}

@@ -12,6 +12,13 @@
   -moz-osx-font-smoothing: grayscale;
   margin:0 !important;
   padding:0;
+
+  /* Disable user select */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
 }
 a {
   font-weight: 500;

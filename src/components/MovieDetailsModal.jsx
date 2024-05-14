@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MovieCard } from './MovieCard.jsx';
 import { useParams } from 'react-router-dom';
-export function MovieDetailsModal(props) {
+import { AnimatePresence, motion } from 'framer-motion';
+// Import images add.png and check.png from assets folder
+import add from '../assets/add.png';
+import check from '../assets/check.png';
+function MovieDetailsModal(props) {
   let { id } = useParams();
   let { media_type } = useParams();
   const [torrent_list, set_torrent_list] = useState([]);
@@ -23,7 +27,7 @@ export function MovieDetailsModal(props) {
     get_media_details(id);
     props.close_torrent_queue();
     window.scrollTo(0, 0);
-  }, [media_type,id]);
+  }, [media_type, id]);
 
   const get_torrents = () => {
     set_searching_for_torrents(true); // We should search for torrents for the selected movie
@@ -134,132 +138,213 @@ export function MovieDetailsModal(props) {
           set_current_backdrop(0); // Pre-load the next image
 
           let next_backdrop = new Image();
-          next_backdrop.src = `https://image.tmdb.org/t/p/original${res.backdrops[1].file_path}`; // Pre-load the previous image
+          if (res.backdrops[1] != undefined) {
+            next_backdrop.src = `https://image.tmdb.org/t/p/original${res.backdrops[1].file_path}`; // Pre-load the previous image
+
+          }
 
           let previous_backdrop = new Image();
-          previous_backdrop.src = `https://image.tmdb.org/t/p/original${res.backdrops[res.backdrops.length - 1].file_path}`;
+          if (res.backdrops[res.backdrops.length - 1] != undefined) {
+            previous_backdrop.src = `https://image.tmdb.org/t/p/original${res.backdrops[res.backdrops.length - 1].file_path}`;
+
+          }
         });
         break;
     }
 
   };
 
-  return <div className="MovieDetailsModal">
-    <div className="MovieDetailsModalHeader" onContextMenu={e => {
-      e.preventDefault();
+  const generate_crew_list = (crew) => {
+    // Here we return how ever many <p> Elements we need
+    // Using the crew array, we will try to find the notable crew members, such as the director, writer, and composer, and list them if they exist.
+    // Possible crew jobs: "Director", "Directing", "Writing", "Production", "Editing", "Sound", "Camera", "Visual Effects", "Lighting"
+    // instead of "job", "it may also be under "known_for_department
+    let crew_list = [];
+    let director = crew.find(member => member.job == "Director" || member.known_for_department == "Directing");
 
-      if (movie_backdrops != null) {
-        if (current_backdrop == 0) {
-          set_current_backdrop(movie_backdrops.length - 1); // Pre-load the previous image
+    if (director != undefined) {
+      crew_list.push(<p key={0}>Directed By: {director.name}</p>);
+    }
 
-          let previous_backdrop = new Image();
-          previous_backdrop.src = `https://image.tmdb.org/t/p/original${movie_backdrops[movie_backdrops.length - 2].file_path}`;
-        } else {
-          set_current_backdrop(current_backdrop - 1); // Pre-load the previous image
+    let writer = crew.find(member => member.job == "Writer" || member.known_for_department == "Writing");
 
-          let previous_backdrop = new Image();
-          previous_backdrop.src = `https://image.tmdb.org/t/p/original${movie_backdrops[current_backdrop - 2].file_path}`;
+    if (writer != undefined) {
+      crew_list.push(<p key={1}>Written By: {writer.name}</p>);
+    }
+
+    let composer = crew.find(member => member.job == "Composer");
+
+    if (composer != undefined) {
+      crew_list.push(<p key={2}>Music By: {composer.name}</p>);
+    }
+
+    return crew_list;
+
+
+  }
+
+  return (
+    <motion.div
+      key={location.pathname}
+      // Scroll in from top
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 1, type: "easeInOut" }}
+      className="MovieDetailsModal">
+      {/* We're going to add a background image only on this page, it will be the first movie_backdrop, blurred */}
+      <div className="MovieDetailsModalHeader" onContextMenu={e => {
+        e.preventDefault();
+
+        if (movie_backdrops != null) {
+          if (current_backdrop == 0) {
+            set_current_backdrop(movie_backdrops.length - 1); // Pre-load the previous image
+
+            let previous_backdrop = new Image();
+            previous_backdrop.src = `https://image.tmdb.org/t/p/original${movie_backdrops[movie_backdrops.length - 2].file_path}`;
+          } else {
+            set_current_backdrop(current_backdrop - 1); // Pre-load the previous image
+
+            let previous_backdrop = new Image();
+            previous_backdrop.src = `https://image.tmdb.org/t/p/original${movie_backdrops[current_backdrop - 2].file_path}`;
+          }
         }
-      }
-    }} onClick={() => {
-      if (movie_backdrops != null) {
-        if (current_backdrop == movie_backdrops.length - 1) {
-          set_current_backdrop(0);
-        } else {
-          set_current_backdrop(current_backdrop + 1); // Pre-load the next image
+      }} onClick={() => {
+        if (movie_backdrops != null) {
+          if (current_backdrop == movie_backdrops.length - 1) {
+            set_current_backdrop(0);
+          } else {
+            set_current_backdrop(current_backdrop + 1); // Pre-load the next image
 
-          let next_backdrop = new Image();
-          next_backdrop.src = `https://image.tmdb.org/t/p/original${movie_backdrops[current_backdrop + 2].file_path}`;
+            let next_backdrop = new Image();
+            next_backdrop.src = `https://image.tmdb.org/t/p/original${movie_backdrops[current_backdrop + 2].file_path}`;
+          }
         }
-      }
-    }}>
-      <div className="MovieDetailsModalHeaderImage" style={{
-        backgroundImage: `url(https://image.tmdb.org/t/p/original${movie_backdrops != null ? movie_backdrops[current_backdrop].file_path : ''})`
       }}>
+        {/* This Element allows you to mark a movie as owned */}
+        {/* If this movie's id is found in the props.owned_movie_list, we show the check image as the child image, if not, we show the add image */}
+        {/* On Click, we call props.update_owned_list with the parameter being the current movie's id */}
+        <div className="MovieDetailsModalHeaderImage" style={{
+          backgroundImage: `url(https://image.tmdb.org/t/p/original${movie_backdrops != null && movie_backdrops[current_backdrop] != undefined ? movie_backdrops[current_backdrop].file_path : ''})`
+        }}>
+        </div>
+        <h1 className="MovieDetailsModalHeaderTitle">{
+          // If the Media Type is a movie, we will display the title of the movie
+          // If the Media Type is a TV Show, we will display the name of the TV Show
+          media_type == "movies" ? movie_details.title : movie_details.name
+        }</h1>
       </div>
-      <h1 className="MovieDetailsModalHeaderTitle">{
-        // If the Media Type is a movie, we will display the title of the movie
-        // If the Media Type is a TV Show, we will display the name of the TV Show
-        media_type == "movies" ? movie_details.title : movie_details.name
-      }</h1>
-    </div>
-    <div className="MovieDetailsModalBody" ref={movie_details_modal_body}>
-      {movie_details != null && movie_details.tagline != "" ? <p>{movie_details.tagline}</p> : null}
-      {
-        /* List genres in a comma seperated list, if movie_details is not null, it will be an array movie_details.genres */
-      }
+      <div className="MovieDetailsModalBody" ref={movie_details_modal_body}>
+        <img className='OwnedMovieToggle' src={props.owned_movie_list.includes(Number(id)) ? check : add} alt="Add" onClick={(e) => {
+          // Stop propagation so we don't navigate to the movie details page
+          e.stopPropagation();
+          console.log("This movie's id is: ", Number(id));
+          console.log("The owned movie list is: ", props.owned_movie_list)
+          console.log("The result of props.owned_movie_list.includes(id) is: ", props.owned_movie_list.includes(Number(id)) ? "true" : "false");
+          props.update_owned_list(id);
+        }} />
 
-
-
-      <p>{movie_details.overview}</p>
-
-      <p className="ReleaseDate" ref={release_date_ref}>Released {// First, we figure out if the media_type is tv, if so, use first_air_date, if not, use release_date, then turn it into a pretty date string like "January 1st, 2022"
-        new Date(media_type == 'tv' ? movie_details.first_air_date : movie_details.release_date).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })}</p>
-
-      {movie_cast != null ? <p>Starring:{" "}
-        {movie_cast.cast.slice(0, 5).map((actor, index) => {
-          return actor.name;
-        }).join(', ')}
-      </p> : null}
-
-      {
-        /* Write director name, which is in movie_cast.crew array, and it is the element in the array with the "job" field set to "Director" */
-        // If there is no director for some reason, we try to show producer, writer, or creator
-      }
-      {movie_cast != null ? <p>Directed By:{" "}
-        {movie_cast.crew.filter(member => member.job == "Director").length > 0 ? movie_cast.crew.filter(member => member.job == "Director")[0].name : movie_cast.crew.filter(member => member.job == "Producer").length > 0 ? movie_cast.crew.filter(member => member.job == "Producer")[0].name : movie_cast.crew.filter(member => member.job == "Writer").length > 0 ? movie_cast.crew.filter(member => member.job == "Writer")[0].name : movie_cast.crew.filter(member => member.job == "Creator").length > 0 ? movie_cast.crew.filter(member => member.job == "Creator")[0].name : "Unknown"}
-      </p> : null}
-      
-
-      {movie_details.genres != null ? <p>{movie_details.genres.map((genre, index) => {
-        return genre.name;
-      }).join(', ')}</p> : null}
-      <div className="MovieDetailsModalDownloadContainer">
+        {/* Here we have a link to open this movie in plex, by simple searching for the movie name in the following url */}
+        {/* https://app.plex.tv/desktop/#!/search?pivot=top&query={movie_name} */}
         {
-          /* If there's no torrent_error, and we aren't searching for torrents, and the torrent_list is empty, we should show the GetTorrentsButton
-           If we are searching for torrents, we should show <p>Searching...</p>
-           If there is a torrent_error, we should say there's an error
-           If there are torrents, we should show the TorrentList
-           If the torrent is added, we should show a message saying it's added
-          */
+          props.owned_movie_list.includes(Number(id)) ?
+          <p className="PlexLink"
+        onClick={() => {
+          window.open(`https://app.plex.tv/desktop/#!/search?pivot=top&query=${media_type == 'tv' ? movie_details.name : movie_details.title}`);
+        }}
+        >Open In Plex</p> : null }
+
+        {/* We're going to show a rating, which is based on the vote average, a double with a highest possible value of 10 (vote_average), we'll round it to the first decimal place, we'll also show theh vote_count, which is the number of votes this movie has received */}
+        <p>Rating: {
+          movie_details.vote_average != null ? movie_details.vote_average.toFixed(1) : "N/A"
+        }/10 ({movie_details.vote_count != undefined ? movie_details.vote_count.toLocaleString() + " votes" : ""})</p>
+
+        {movie_details != null && movie_details.tagline != "" ? <p>{movie_details.tagline}</p> : null}
+
+        <p>{movie_details.overview}</p>
+
+        <p className="ReleaseDate" ref={release_date_ref}>Released {// First, we figure out if the media_type is tv, if so, use first_air_date, if not, use release_date, then turn it into a pretty date string like "January 1st, 2022"
+          new Date(media_type == 'tv' ? movie_details.first_air_date : movie_details.release_date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}</p>
+
+        {movie_cast != null ? <p>Starring:{" "}
+          {movie_cast.cast.slice(0, 5).map((actor, index) => {
+            return actor.name;
+          }).join(', ')}
+        </p> : null}
+
+        {
+          // Using the crew array, we will try to find the notable crew members, such as the director, writer, and composer, and list them if they exist.
+          // Possible crew jobs: "Director", "Directing", "Writing", "Production", "Editing", "Sound", "Camera", "Visual Effects", "Lighting"
         }
-        {torrent_error != null && torrent_added == false ? <p>{torrent_error}</p> : searching_for_torrents ? <p>Searching...</p> : torrent_list.length > 0 ? <TorrentList request_download={request_download} torrents={torrent_list} /> : torrent_added == false && <GetTorrentsButton get_torrents={get_torrents} />}
-        {torrent_added ? <p>Torrent Added To Download Queue</p> : null}
+
+        {
+          movie_cast != null ?
+            generate_crew_list(movie_cast.crew).map((crew_member, index) => {
+              return crew_member;
+            }) : null
+        }
+
+
+
+
+        {movie_details.genres != null ? <p>{movie_details.genres.map((genre, index) => {
+          return genre.name;
+        }).join(', ')}</p> : null}
+        <div className="MovieDetailsModalDownloadContainer">
+          {
+            /* If there's no torrent_error, and we aren't searching for torrents, and the torrent_list is empty, we should show the GetTorrentsButton
+             If we are searching for torrents, we should show <p>Searching...</p>
+             If there is a torrent_error, we should say there's an error
+             If there are torrents, we should show the TorrentList
+             If the torrent is added, we should show a message saying it's added
+            */
+          }
+          {torrent_error != null && torrent_added == false ? <p>{torrent_error}</p> : searching_for_torrents ? <p>Searching...</p> : torrent_list.length > 0 ? <TorrentList movie_id={id} owned_movie_list={props.owned_movie_list} update_owned_list={props.update_owned_list} request_download={request_download} torrents={torrent_list} /> : torrent_added == false && <GetTorrentsButton get_torrents={get_torrents} />}
+          {torrent_added ? <p>Torrent Added To Download Queue</p> : null}
+        </div>
+        {
+          /* Now we have a section for similar movies, these will be movie cards and will carousel so the user can see more to the right */
+        }
+        <h2>Similar Movies</h2>
+        <div className="MovieDetailsModalRecommendedMovies">
+          {recommended_movies.map((movie, index) => {
+            return <MovieCard owned_movie_list={props.owned_movie_list} update_owned_list={props.update_owned_list} navigate={props.navigate} media_type={media_type} key={index} movie={movie} set_selected_movie={clicked_movie => {
+              props.set_selected_movie(clicked_movie);
+            }} />;
+          })}
+        </div>
       </div>
-      {
-        /* Now we have a section for similar movies, these will be movie cards and will carousel so the user can see more to the right */
-      }
-      <h2>Similar Movies</h2>
-      <div className="MovieDetailsModalRecommendedMovies">
-        {recommended_movies.map((movie, index) => {
-          return <MovieCard navigate={props.navigate} media_type={media_type} key={index} movie={movie} set_selected_movie={clicked_movie => {
-            props.set_selected_movie(clicked_movie);
-          }} />;
-        })}
-      </div>
-    </div>
-  </div>;
+    </motion.div>
+  )
 }
-export function TorrentList(props) {
+function TorrentList(props) {
   return <div className="TorrentList">
     {props.torrents.map((torrent, index) => {
-      return <TorrentItem request_download={props.request_download} key={index} torrent={torrent} />;
+      return <TorrentItem movie_id={props.movie_id} owned_movie_list={props.owned_movie_list} update_owned_list={props.update_owned_list} request_download={props.request_download} key={index} torrent={torrent} />;
     })}
   </div>;
 }
-export function TorrentItem(props) {
+function TorrentItem(props) {
   // This element will have the name of the torrent, the number of seeders, and a download button
   return <div className="TorrentItem" onClick={() => {
     props.request_download(props.torrent.magnet);
+    props.update_owned_list(props.movie_id);
   }}>
     <span className="TorrentItemName">{props.torrent.name}</span>
     <span className="TorrentItemSeedCount">{props.torrent.seeder_count} Seeders</span>
   </div>;
 }
-export function GetTorrentsButton(props) {
+function GetTorrentsButton(props) {
   return <button onClick={props.get_torrents} className="DownloadButton">Find Torrents</button>;
+}
+
+export {
+  MovieDetailsModal,
+  TorrentList,
+  TorrentItem,
+  GetTorrentsButton
 }
