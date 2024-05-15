@@ -281,6 +281,9 @@ body {
   filter: invert(1);
 }
 
+.MovieCardVoteAverage{
+  font-size:1.1em;
+}
 
 .MovieTitle {
   position: absolute;

@@ -35,7 +35,7 @@ function MovieDetailsModal(props) {
     // We call 192.168.1.217:6970/search/{movie_title} and that will return a list of torrents
     let search_query = media_type == 'movies' ? movie_details.title : movie_details.name;
 
-    fetch(`http://192.168.1.217:6970/search/${search_query}`).then(res => res.json()).then(data => {
+    fetch(`http://192.168.1.217:6970/search/${search_query}/1`).then(res => res.json()).then(data => {
       console.log(data);
       set_torrent_list(data);
       set_searching_for_torrents(false);
@@ -45,7 +45,8 @@ function MovieDetailsModal(props) {
     });
   };
 
-  const request_download = torrent_magnet_link => {
+  const request_download = (torrent_magnet_link, media_type, movie_name) => {
+    console.log('Requesting download for: ', torrent_magnet_link, media_type, movie_name); // We should add the torrent to the download queue
     // We call a post to 192.168.1.217:6970/download with a body of {magnet: torrent_magnet_link}
     fetch('http://192.168.1.217:6970/download', {
       method: 'POST',
@@ -53,7 +54,9 @@ function MovieDetailsModal(props) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        magnet: torrent_magnet_link
+        magnet: torrent_magnet_link,
+        media_type: media_type,
+        movie_name: movie_name
       })
     }).then(res => res.json()).then(data => {
       console.log(data);
@@ -303,7 +306,17 @@ function MovieDetailsModal(props) {
              If the torrent is added, we should show a message saying it's added
             */
           }
-          {torrent_error != null && torrent_added == false ? <p>{torrent_error}</p> : searching_for_torrents ? <p>Searching...</p> : torrent_list.length > 0 ? <TorrentList movie_id={id} owned_movie_list={props.owned_movie_list} update_owned_list={props.update_owned_list} request_download={request_download} torrents={torrent_list} /> : torrent_added == false && <GetTorrentsButton get_torrents={get_torrents} />}
+          {torrent_error != null && torrent_added == false ? <p>{torrent_error}</p> : searching_for_torrents ? <p>Searching...</p> : torrent_list.length > 0 ? 
+          <TorrentList 
+          movie_details={movie_details} 
+          media_type={media_type} 
+          movie_id={id} 
+          owned_movie_list={props.owned_movie_list} 
+          update_owned_list={props.update_owned_list} 
+          request_download={request_download} 
+          torrents={torrent_list} /> : 
+          torrent_added == false && 
+          <GetTorrentsButton get_torrents={get_torrents} />}
           {torrent_added ? <p>Torrent Added To Download Queue</p> : null}
         </div>
         {
@@ -324,14 +337,22 @@ function MovieDetailsModal(props) {
 function TorrentList(props) {
   return <div className="TorrentList">
     {props.torrents.map((torrent, index) => {
-      return <TorrentItem movie_id={props.movie_id} owned_movie_list={props.owned_movie_list} update_owned_list={props.update_owned_list} request_download={props.request_download} key={index} torrent={torrent} />;
+      return <TorrentItem 
+      movie_name={props.media_type == "movies" ? props.movie_details.title : props.movie_details.name} 
+      movie_id={props.movie_id} 
+      media_type={props.media_type}
+      owned_movie_list={props.owned_movie_list} 
+      update_owned_list={props.update_owned_list} 
+      request_download={props.request_download} 
+      key={index} 
+      torrent={torrent} />;
     })}
   </div>;
 }
 function TorrentItem(props) {
   // This element will have the name of the torrent, the number of seeders, and a download button
   return <div className="TorrentItem" onClick={() => {
-    props.request_download(props.torrent.magnet);
+    props.request_download(props.torrent.magnet, props.media_type, props.movie_name);
     props.update_owned_list(props.movie_id);
   }}>
     <span className="TorrentItemName">{props.torrent.name}</span>
