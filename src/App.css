@@ -172,18 +172,22 @@ body {
   margin-bottom: 5%;
 }
 
-.MovieCard {
+.MovieCardTilt{
   display: inline-block;
   width: 30vw;
   min-width: 175px;
-  height: auto;
   margin: 2%;
+  height: auto;
+}
+
+.MovieCard {
+  width:100%;
   position: relative;
   background-position: center;
   background-size: cover;
   overflow: hidden;
   border-radius: 15px;
-  transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out, filter 0.3s ease-in-out, border 0.3s ease-in-out;
+  transition: box-shadow 0.3s ease-in-out, filter 0.3s ease-in-out, border 0.3s ease-in-out;
   cursor: pointer;
   /* Give every movie card a nice drop shadow */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -409,7 +413,7 @@ body {
   background: none;
 }
 
-.MovieDetailsModalBody .MovieCard {
+.MovieDetailsModalBody .MovieCardTilt {
   width: 20%;
 }
 
@@ -636,8 +640,11 @@ body {
   .MovieDetailsModalHeaderImage {
   }
 
+  .MovieCardTilt{
+    width:20vw;
+  }
   .MovieCard{
-    width: 20vw;
+    width: 100%;
   }
 
   .MovieCard:hover {
