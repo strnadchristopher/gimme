@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MovieCard } from './MovieCard.jsx';
-import { useParams } from 'react-router-dom';
+import { json, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 // Import images add.png and check.png from assets folder
 import add from '../assets/add.png';
@@ -35,12 +35,14 @@ function MovieDetailsModal(props) {
     // We call 192.168.1.217:6970/search/{movie_title} and that will return a list of torrents
     let search_query = media_type == 'movies' ? movie_details.title : movie_details.name;
 
-    fetch(`http://192.168.1.217:6970/search/${search_query}/1`).then(res => res.json()).then(data => {
+    // fetch(`http://192.168.1.217:6970/search/${search_query}/1`).then(res => res.json()).then(data => {
+    // Above line but using VITE_BACKEND_URL environment variable
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/search/${search_query}/1`).then(res => res.json()).then(data => {
       console.log(data);
       set_torrent_list(data);
       set_searching_for_torrents(false);
     }).catch(err => {
-      set_torrent_error('There was an error searching for torrents');
+      set_torrent_error("Error Searching for Torrents: " + (JSON.stringify(err) || "Unknown Error"));
       set_searching_for_torrents(false);
     });
   };
@@ -48,7 +50,9 @@ function MovieDetailsModal(props) {
   const request_download = (torrent_magnet_link, media_type, movie_name) => {
     console.log('Requesting download for: ', torrent_magnet_link, media_type, movie_name); // We should add the torrent to the download queue
     // We call a post to 192.168.1.217:6970/download with a body of {magnet: torrent_magnet_link}
-    fetch('http://192.168.1.217:6970/download', {
+    // fetch('http://192.168.1.217:6970/download', {
+    // Above line but using VITE_BACKEND_URL environment variable
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/download`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -63,6 +67,9 @@ function MovieDetailsModal(props) {
       set_torrent_added(true);
       set_torrent_list([]);
       window.scrollTo(0, 0);
+    }).catch(err => {
+      console.log(err);
+      set_torrent_error("Error Requesting Torrent Download " + JSON.stringify(err));
     });
   };
 
@@ -195,6 +202,18 @@ function MovieDetailsModal(props) {
       exit={{ opacity: 0 }}
       transition={{ duration: 1, type: "easeInOut" }}
       className="MovieDetailsModal">
+      <div className="MovieDetailsModalBackground"
+        style={{
+          backgroundImage: `url(https://image.tmdb.org/t/p/original${movie_backdrops != null && movie_backdrops[current_backdrop] != undefined ? movie_backdrops[current_backdrop].file_path : ''})`
+        }}
+        onClick={() => {
+          props.navigate('/');
+        }}>
+        <div className="MovieDetailsModalBackgroundOverlay">
+
+        </div>
+
+      </div>
       {/* We're going to add a background image only on this page, it will be the first movie_backdrop, blurred */}
       <div className="MovieDetailsModalHeader" onContextMenu={e => {
         e.preventDefault();
@@ -251,11 +270,11 @@ function MovieDetailsModal(props) {
         {/* https://app.plex.tv/desktop/#!/search?pivot=top&query={movie_name} */}
         {
           props.owned_movie_list.includes(Number(id)) ?
-          <p className="PlexLink"
-        onClick={() => {
-          window.open(`https://app.plex.tv/desktop/#!/search?pivot=top&query=${media_type == 'tv' ? movie_details.name : movie_details.title}`);
-        }}
-        >Open In Plex</p> : null }
+            <p className="PlexLink"
+              onClick={() => {
+                window.open(`https://app.plex.tv/desktop/#!/search?pivot=top&query=${media_type == 'tv' ? movie_details.name : movie_details.title}`);
+              }}
+            >Open In Plex</p> : null}
 
         {/* We're going to show a rating, which is based on the vote average, a double with a highest possible value of 10 (vote_average), we'll round it to the first decimal place, we'll also show theh vote_count, which is the number of votes this movie has received */}
         <p>Rating: {
@@ -306,17 +325,17 @@ function MovieDetailsModal(props) {
              If the torrent is added, we should show a message saying it's added
             */
           }
-          {torrent_error != null && torrent_added == false ? <p>{torrent_error}</p> : searching_for_torrents ? <p>Searching...</p> : torrent_list.length > 0 ? 
-          <TorrentList 
-          movie_details={movie_details} 
-          media_type={media_type} 
-          movie_id={id} 
-          owned_movie_list={props.owned_movie_list} 
-          update_owned_list={props.update_owned_list} 
-          request_download={request_download} 
-          torrents={torrent_list} /> : 
-          torrent_added == false && 
-          <GetTorrentsButton get_torrents={get_torrents} />}
+          {torrent_error != null && torrent_added == false ? <p>{torrent_error}</p> : searching_for_torrents ? <p>Searching...</p> : torrent_list.length > 0 ?
+            <TorrentList
+              movie_details={movie_details}
+              media_type={media_type}
+              movie_id={id}
+              owned_movie_list={props.owned_movie_list}
+              update_owned_list={props.update_owned_list}
+              request_download={request_download}
+              torrents={torrent_list} /> :
+            torrent_added == false &&
+            <GetTorrentsButton get_torrents={get_torrents} />}
           {torrent_added ? <p>Torrent Added To Download Queue</p> : null}
         </div>
         {
@@ -337,15 +356,15 @@ function MovieDetailsModal(props) {
 function TorrentList(props) {
   return <div className="TorrentList">
     {props.torrents.map((torrent, index) => {
-      return <TorrentItem 
-      movie_name={props.media_type == "movies" ? props.movie_details.title : props.movie_details.name} 
-      movie_id={props.movie_id} 
-      media_type={props.media_type}
-      owned_movie_list={props.owned_movie_list} 
-      update_owned_list={props.update_owned_list} 
-      request_download={props.request_download} 
-      key={index} 
-      torrent={torrent} />;
+      return <TorrentItem
+        movie_name={props.media_type == "movies" ? props.movie_details.title : props.movie_details.name}
+        movie_id={props.movie_id}
+        media_type={props.media_type}
+        owned_movie_list={props.owned_movie_list}
+        update_owned_list={props.update_owned_list}
+        request_download={props.request_download}
+        key={index}
+        torrent={torrent} />;
     })}
   </div>;
 }

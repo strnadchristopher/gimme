@@ -8,12 +8,13 @@
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "prod": "vite build && serve -s dist -p 6969",
+    "prod": "vite build && http-server ./dist -a 0.0.0.0 -p 6969 --ssl --cert keys/cert.pem --key keys/key.pem",
     "release": "vite build && serve -s dist -p 6969"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
     "framer-motion": "^11.1.7",
+    "http-server": "^14.1.1",
     "moviedb-promise": "^4.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

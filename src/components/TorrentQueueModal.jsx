@@ -43,7 +43,9 @@ function TorrentQueueItem(props) {
 
   return <div className="TorrentQueueItem" onClick={() => {
     // Clicking on a torrent queue item should send a request to the server to resume this download
-    fetch(`http://192.168.1.217:6970/resume`, {
+    // fetch(`http://192.168.1.217:6970/resume`, {
+    // Same as above but using the VITE_BACKEND_URL
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/resume`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -58,12 +60,12 @@ function TorrentQueueItem(props) {
     <div // We're gonna have a style variable for the width of the progress bar, it should be the percentage of total_downloaded / total_size
       // If total_downloaded is null, we should set the width to 0%
       style={{
-        width: props.torrent.total_downloaded != null && props.torrent.total_size != null ? `${props.torrent.total_downloaded / props.torrent.total_size * 100}%` : '0%'
+        width: props.torrent.total_downloaded != null && props.torrent.total_size != null ? `${ props.torrent.total_downloaded / props.torrent.total_size * 100 } % ` : '0%'
       }} className="TorrentQueueItemProgressBar"></div>
     <span className="TorrentQueueItemName">{props.torrent.name}</span>
 
     {props.is_downloading ? <>
-      <p className="TorrentQueueDLSpeed">{props.torrent.dl_speed != -1 ? `${Math.floor(props.torrent.dl_speed / 1024 / 1024)} Mb/s, ${props.torrent.peers} peers, ${props.torrent.seeds_total} total seeds` : 'Waiting To Download'}</p>
+      <p className="TorrentQueueDLSpeed">{props.torrent.dl_speed != -1 ? `${ Math.floor(props.torrent.dl_speed / 1024 / 1024) } Mb / s, ${ props.torrent.peers } peers, ${ props.torrent.seeds_total } total seeds` : 'Waiting To Download'}</p>
 
       <p className="TorrentQueueETA">{props.torrent.eta != null && props.torrent.dl_speed > 0 ? convert_seconds_to_readable(props.torrent.eta) : ''}</p>
     </> : null}

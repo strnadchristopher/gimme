@@ -24,6 +24,7 @@ function App() {
   const [genre_list, set_genre_list] = useState([]);
   const [owned_movie_list, set_owned_movie_list] = useState([]);
   const [last_search_url, set_last_search_url] = useState(null); // This value is set when we navigate to a search page, weather its query search, or genre search, or top_rated, etc
+  const [background_image_url, set_background_image_url] = useState(null);
   const tv_genre_list = [
     {
       "id": 10759,
@@ -193,7 +194,9 @@ function App() {
   }, [])
 
   const get_owned_movies = () => {
-    fetch('http://192.168.1.217:6970/owned_list')
+    // fetch('http://192.168.1.217:6970/owned_list')
+    // Above line but using the .env VITE_BACKEND_URL variable which includes the port
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/owned_list`)
       .then(res => res.json())
       .then(data => {
         console.log("Owned Movie List:")
@@ -204,7 +207,9 @@ function App() {
 
   const update_owned_list = (id) => {
     console.log("Adding movie to owned list: ", id)
-    fetch('http://192.168.1.217:6970/update_owned_list', {
+    // fetch('http://192.168.1.217:6970/update_owned_list', {
+    // Above line but using the .env VITE_BACKEND_URL variable which includes the port
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/update_owned_list`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -232,7 +237,9 @@ function App() {
     clearTimeout(update_torrent_queue_timer)
     // We call the same endpoint as before, but with /torrents
     // We can use this data to see how far along our torrents are in downloading
-    fetch('http://192.168.1.217:6970/torrents')
+    // fetch('http://192.168.1.217:6970/torrents')
+    // Above line but using the .env VITE_BACKEND_URL variable which includes the port
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/torrents`)
       .then(res => res.json())
       .then(data => {
         set_torrent_queue_data(data)
@@ -269,6 +276,8 @@ function App() {
       />
 
       <AnimatedRoutes
+        set_background_image_url={set_background_image_url}
+        background_image_url={background_image_url}
         navigate={navigate}
         close_torrent_queue={close_torrent_queue}
         set_search_box_text={set_search_box_text}
@@ -336,6 +345,8 @@ function AnimatedRoutes(props) {
           update_owned_list={props.update_owned_list}
           owned_movie_list={props.owned_movie_list}
           set_last_search_url={props.set_last_search_url}
+          background_image_url={props.background_image_url}
+          set_background_image_url={props.set_background_image_url}
         />}
       />
       <Route path="/:media_type/top_rated/:page" element={
@@ -351,6 +362,8 @@ function AnimatedRoutes(props) {
           update_owned_list={props.update_owned_list}
           owned_movie_list={props.owned_movie_list}
           set_last_search_url={props.set_last_search_url}
+          background_image_url={props.background_image_url}
+          set_background_image_url={props.set_background_image_url}
         />}
       />
       <Route path="/:media_type/popular/:page" element={
@@ -366,6 +379,8 @@ function AnimatedRoutes(props) {
           update_owned_list={props.update_owned_list}
           set_last_search_url={props.set_last_search_url}
           owned_movie_list={props.owned_movie_list}
+          background_image_url={props.background_image_url}
+          set_background_image_url={props.set_background_image_url}
         />}
       />
       <Route path="/:media_type/genre/:genre_id/:page" element={
@@ -383,6 +398,8 @@ function AnimatedRoutes(props) {
           update_owned_list={props.update_owned_list}
           owned_movie_list={props.owned_movie_list}
           set_last_search_url={props.set_last_search_url}
+          background_image_url={props.background_image_url}
+          set_background_image_url={props.set_background_image_url}
         />}
       />
       <Route path="/:media_type/genres" element={
@@ -450,6 +467,23 @@ function SearchResults(props) {
         break
     }
   }, [media_type, search_query, props.search_type, page])
+
+  // When search results change, update the background image
+  useEffect(() => {
+    // We should get the movie backdrops from the moviedb.movieImage(movie_id) method, using the first movie in the search results, presuming that there is a search result
+    if (search_results.length > 0) {
+      props.moviedb.movieImages({ id: search_results[0].id }).then((res) => {
+
+        // Load the next background image url, and once its loaded, set the background image url to the next background image url
+        let next_background_image_url = `https://image.tmdb.org/t/p/original${res.backdrops[0].file_path}`
+        let img = new Image()
+        img.src = next_background_image_url
+        img.onload = () => {
+          props.set_background_image_url(next_background_image_url)
+        }
+      })
+  }
+  }, [search_results])
 
   // Search functions
   const search_movie_db = (search_query, page_num = 1) => {
@@ -694,6 +728,15 @@ function SearchResults(props) {
         }
       }}
     >
+      {/* Background div, which is set the a blurred image of the first search result's first poster */}
+      <div className="SearchResultsBackgroundImage"
+        style={{
+          backgroundImage: props.background_image_url != null ? `url(${props.background_image_url})` : null
+        }}
+      >
+        <div className="SearchResultsBackgroundImageOverlay"></div>
+
+      </div>
       {/* We will display the search method right now as an h1 above all the other search results, if it's a search query, we'll show the search query with quotes surrounding it, if it's a genre, or top_rated, or popular, we'll show that text instead */}
       <h1 className="SearchResultsHeader">
         {props.search_type == "search" ? `Search Results for "${search_query}"`
@@ -702,6 +745,47 @@ function SearchResults(props) {
         <br />
         {/* Then, if we're on popular, show a smaller text next to it that says "Top Rated", which acts as a link to the top rated search type. Do this vice versa as well */}
       </h1>
+      {total_pages > 1 && <div className="Pagination">
+        {<button disabled={false}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            goto_page(1);
+          }}
+          onClick={() => { previous_page() }}>{"<"}</button>}
+
+        {/* Show current page */}
+        <button
+          onContextMenu={(e) => {
+            e.preventDefault()
+            if (current_page == 1) {
+              goto_page(Math.min(total_pages, 500))
+            } else {
+              goto_page(Math.max(current_page - 25, 1))
+            }
+          }}
+          onClick={() => {
+            if (current_page == 500) {
+              goto_page(1)
+            } else {
+              goto_page(Math.min(current_page + 25, total_pages))
+            }
+          }}
+        >{current_page}</button>
+
+        {/* Forwrd  */}
+        {current_page < total_pages ? <button
+          onContextMenu={
+            (e) => {
+              e.preventDefault()
+              goto_page(Math.min(total_pages, 500))
+            }
+          }
+          onClick={() => {
+            next_page();
+          }}>{">"}</button> : null}
+      </div>}
+      
+      
       {search_results.map((movie, index) => {
         return <MovieCard update_owned_list={props.update_owned_list} owned_movie_list={props.owned_movie_list} navigate={props.navigate} media_type={media_type} set_selected_movie={props.set_selected_movie} key={index} movie={movie} />
       })}
