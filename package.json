@@ -9,7 +9,9 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "prod": "vite build && http-server ./dist -a 0.0.0.0 -p 6969 --ssl --cert keys/cert.pem --key keys/key.pem",
-    "release": "vite build && serve -s dist -p 6969"
+    "release": "vite build && serve -s dist -p 6969",
+    "deploy": "npm run build && scp -r ./dist/ christopher@192.168.1.217:/home/christopher/gimme/frontend",
+    "send": "scp -r ./dist/ christopher@192.168.1.217:/home/christopher/gimme/frontend"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
