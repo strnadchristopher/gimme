@@ -176,6 +176,8 @@ function App() {
     get_torrents_progress();
     get_owned_movies();
     get_previous_magnet_list();
+    // Print if we are in production or development env
+    console.log("We are in", import.meta.env.MODE)
     // Add an event listener for ctrl + f, which will focus the search bar
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.key == 'f') {
@@ -319,6 +321,7 @@ function App() {
         last_search_url={last_search_url}
         update_previous_magnet_list={update_previous_magnet_list}
         previous_magnet_list={previous_magnet_list}
+        set_genre_list={set_genre_list}
       />
     </>
   )
@@ -429,13 +432,32 @@ function AnimatedRoutes(props) {
           set_background_image_url={props.set_background_image_url}
         />}
       />
-      <Route path="/:media_type/genres" element={
-        <GenreList
+      {/* Route for searching with keywords */}
+      <Route path="/:media_type/keyword/:keyword_id/:page" element={
+        <SearchResults
+          close_torrent_queue={props.close_torrent_queue}
+          search_type={"keyword"}
+          set_selected_movie={props.set_selected_movie}
+          selected_movie={props.selected_movie}
+          moviedb={props.moviedb}
+          set_search_box_text={props.set_search_box_text}
+          navigate={props.navigate}
+          show_torrent_queue={props.show_torrent_queue}
+          update_owned_list={props.update_owned_list}
+          owned_movie_list={props.owned_movie_list}
+          set_last_search_url={props.set_last_search_url}
+          background_image_url={props.background_image_url}
+          set_background_image_url={props.set_background_image_url}
+        />}
+      />
+      <Route path="/:media_type/categories" element={
+        <CategoryList
           close_torrent_queue={props.close_torrent_queue}
           set_search_box_text={props.set_search_box_text}
           set_selected_movie={props.set_selected_movie}
           selected_movie={props.selected_movie}
           show_torrent_queue={props.show_torrent_queue}
+          set_genre_list={props.set_genre_list}
         />}
       />
       <Route path="/:media_type/details/:id" element={
@@ -469,11 +491,13 @@ function SearchResults(props) {
   let { media_type } = useParams(); //either tv or movie
   let { genre_id } = useParams(); //if searching by genre, the genre id
   let { search_query } = useParams(); //if searching by search query, the search query
+  let { keyword_id } = useParams(); //if searching by keyword, the keyword id
   let { page } = useParams(); //the page number
   const [search_results, set_search_results] = useState([])
   const [current_page, set_current_page] = useState(1)
   const [total_pages, set_total_pages] = useState(1)
   const [current_genre, set_current_genre] = useState(null)
+  const [keyword_name, set_keyword_name] = useState(null)
 
   useEffect(() => {
     // Display the right information depending on the route
@@ -494,6 +518,10 @@ function SearchResults(props) {
       case "genre":
         search_by_genre(genre_id, page)
         break
+      case "keyword":
+        search_by_keyword(keyword_id, page)
+        get_keyword_name(keyword_id)
+        break
     }
   }, [media_type, search_query, props.search_type, page])
 
@@ -501,17 +529,30 @@ function SearchResults(props) {
   useEffect(() => {
     // We should get the movie backdrops from the moviedb.movieImage(movie_id) method, using the first movie in the search results, presuming that there is a search result
     if (search_results.length > 0) {
-      props.moviedb.movieImages({ id: search_results[0].id }).then((res) => {
+      // If we're looking at movies, we should use the movieImages method, if we're looking at tv shows, we should use the tvImages method
+      if (media_type == "movies") {
+        props.moviedb.movieImages({ id: search_results[0].id }).then((res) => {
 
-        // Load the next background image url, and once its loaded, set the background image url to the next background image url
-        let next_background_image_url = `https://image.tmdb.org/t/p/original${res.backdrops[0].file_path}`
-        let img = new Image()
-        img.src = next_background_image_url
-        img.onload = () => {
-          props.set_background_image_url(next_background_image_url)
-        }
-      })
-  }
+          // Load the next background image url, and once its loaded, set the background image url to the next background image url
+          let next_background_image_url = `https://image.tmdb.org/t/p/original${res.backdrops[0].file_path}`
+          let img = new Image()
+          img.src = next_background_image_url
+          img.onload = () => {
+            props.set_background_image_url(next_background_image_url)
+          }
+        })
+      }else{
+        props.moviedb.tvImages({ id: search_results[0].id }).then((res) => {
+          // Load the next background image url, and once its loaded, set the background image url to the next background image url
+          let next_background_image_url = `https://image.tmdb.org/t/p/original${res.backdrops[0].file_path}`
+          let img = new Image()
+          img.src = next_background_image_url
+          img.onload = () => {
+            props.set_background_image_url(next_background_image_url)
+          }
+        })
+      }
+    }
   }, [search_results])
 
   // Search functions
@@ -654,7 +695,35 @@ function SearchResults(props) {
         })
         .catch(console.error)
     }
+  }
 
+  const search_by_keyword = (keyword_id, page_num = 1) => {
+    // This uses the discoverMovie or discoverTv method, depending on the media_type, and uses the with_keywords parameter, in popularity descending
+    console.log("Attempting to search by keyword: ", keyword_id, " with page number: ", page_num)
+    window.scrollTo(0, 0)
+    props.close_torrent_queue()
+    // Depending on media_type, we will call discoverMovie or discoverTv
+    if (media_type == "tv") {
+      moviedb
+        .discoverTv({ with_keywords: keyword_id, page: page_num, sort_by: 'vote_count.desc' })
+        .then((res) => {
+          console.log(res)
+          set_search_results(res.results)
+          set_current_page(res.page)
+          set_total_pages(res.total_pages)
+        })
+        .catch(console.error)
+    } else {
+      moviedb
+        .discoverMovie({ with_keywords: keyword_id, page: page_num, sort_by: 'vote_count.desc' })
+        .then((res) => {
+          console.log(res)
+          set_search_results(res.results)
+          set_current_page(res.page)
+          set_total_pages(res.total_pages)
+        })
+        .catch(console.error)
+    }
   }
 
   const next_page = () => {
@@ -681,6 +750,9 @@ function SearchResults(props) {
         break
       case "genre":
         props.navigate(`/${media_type}/genre/${genre_id}/${next_page}`)
+        break
+      case "keyword":
+        props.navigate(`/${media_type}/keyword/${keyword_id}/${next_page}`)
         break
     }
   }
@@ -710,6 +782,9 @@ function SearchResults(props) {
       case "genre":
         props.navigate(`/${media_type}/genre/${genre_id}/${previous_page}`)
         break
+      case "keyword":
+        props.navigate(`/${media_type}/keyword/${keyword_id}/${previous_page}`)
+        break
     }
   }
 
@@ -730,6 +805,9 @@ function SearchResults(props) {
       case "genre":
         props.navigate(`/${media_type}/genre/${genre_id}/${page_num}`)
         break
+      case "keyword":
+        props.navigate(`/${media_type}/keyword/${keyword_id}/${page_num}`)
+        break
     }
   }
 
@@ -740,6 +818,15 @@ function SearchResults(props) {
     let genre_list = media_type == "tv" ? props.tv_genre_list : props.movie_genre_list
     let genre = genre_list.find((genre) => genre.id == genre_id)
     return genre.name
+  }
+
+  const get_keyword_name = (keyword_id) => {
+    // Call the movie db keywordDetails method, and get the name of the keyword
+    // We will use the keyword_id to get the name of the keyword
+    moviedb.keywordInfo({ id: keyword_id }).then((res) => {
+      console.log(res)
+      set_keyword_name(res.name)
+    })
   }
 
   return (
@@ -770,7 +857,7 @@ function SearchResults(props) {
       <h1 className="SearchResultsHeader">
         {props.search_type == "search" ? `Search Results for "${search_query}"`
           : props.search_type == "genre" ? `${get_genre_name(genre_id)}`
-            : props.search_type == "top_rated" ? "Top Rated" : props.search_type == "popular" ? "Popular" : null}
+            : props.search_type == "top_rated" ? "Top Rated" : props.search_type == "popular" ? "Popular" : props.search_type == "keyword" ? keyword_name : null}
         <br />
         {/* Then, if we're on popular, show a smaller text next to it that says "Top Rated", which acts as a link to the top rated search type. Do this vice versa as well */}
       </h1>
@@ -813,8 +900,8 @@ function SearchResults(props) {
             next_page();
           }}>{">"}</button> : null}
       </div>}
-      
-      
+
+
       {search_results.map((movie, index) => {
         return <MovieCard update_owned_list={props.update_owned_list} owned_movie_list={props.owned_movie_list} navigate={props.navigate} media_type={media_type} set_selected_movie={props.set_selected_movie} key={index} movie={movie} />
       })}
@@ -949,8 +1036,8 @@ function Navbar(props) {
           <NavLink
             className={props.location.pathname.includes("genres") ? "NavbarLinkActive" : "NavbarLinkInactive"}
             to={
-              props.location.pathname.includes("tv") ? "/tv/genres" : "/movies/genres"
-            }>Genres</NavLink>
+              props.location.pathname.includes("tv") ? "/tv/categories" : "/movies/categories"
+            }>Categories</NavLink>
         </div>
         : null
       }
@@ -958,7 +1045,7 @@ function Navbar(props) {
   )
 }
 
-function GenreList(props) {
+function CategoryList(props) {
   const { media_type } = useParams()
   const [genres, set_genres] = useState([])
   const get_genres = () => {
@@ -1008,6 +1095,7 @@ function GenreList(props) {
           media_type={media_type}
         />
       })}
+      <KeywordSearchArea media_type={media_type} />
     </motion.div>
   )
 }
@@ -1019,6 +1107,57 @@ function GenreItem(props) {
         }/genre/${props.genre.id}/1`}
       className="GenreItem">
       <h1>{props.genre.name}</h1>
+    </NavLink>
+  )
+}
+
+function KeywordSearchArea(props){
+  const [found_keywords, set_found_keywords] = useState([])
+  const [search_text, set_search_text] = useState('')
+  const search_keywords = (search_text) => {
+    // We will use searchKeyword to search for keywords
+    // We will use the search_text to search for keywords
+    moviedb.searchKeyword({ query: search_text }).then((res) => {
+      console.log(res)
+      set_found_keywords(res.results)
+    })
+  }
+  return (
+    <div className="KeywordSearchArea">
+      <h1>Keyword Search</h1>
+      <input className="KeywordSearchAreaTextBox" type="text" placeholder="Search for a keyword"
+      
+      // Add an enter key listener to call the search_keywords method
+      onKeyUp={(e) => {
+        if (search_text.length > 0) {
+          // e.target.blur();
+          search_keywords(search_text)
+        }else{
+          console.log("Enterkey")
+        }
+      }}
+
+      // Update the search_text state when the input changes
+      onChange={(e) => {
+        set_search_text(e.target.value)
+      }}
+      
+      />
+      {/* Map through found keywords and make a keyword item for each of them */}
+      {found_keywords.map((keyword, index) => {
+        return <KeywordItem key={index} media_type={props.media_type} keyword={keyword} />
+      })}
+    </div>
+  )
+}
+
+function KeywordItem(props) {
+  return (
+    <NavLink
+      to={`/${props.media_type
+        }/keyword/${props.keyword.id}/1`}
+      className="GenreItem">
+      <h1>{props.keyword.name}</h1>
     </NavLink>
   )
 }

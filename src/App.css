@@ -197,6 +197,7 @@ body {
 .SearchResultsHeader {
   margin-top: 5%;
   margin-bottom: 5%;
+  text-transform: capitalize;
 }
 
 .MovieCardTilt{
@@ -528,7 +529,7 @@ body {
 }
 
 .GenreList {
-  padding-top: 8vh;
+  padding-top: 15vh;
   text-align: center;
   padding-bottom: 10vh;
   z-index: 2;
@@ -566,6 +567,45 @@ body {
   transition: background 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
+.GenreItem h1{
+  text-transform: capitalize;
+}
+
+/* Keyword search stuff */
+
+.KeywordSearchAreaTextBox{
+  width:50%;
+  height:100%;
+  background:none;
+  border:none;
+  color:white;
+  font-size:1.5em;
+  text-align: center;
+  margin:auto;
+  margin-top:4%;
+  margin-bottom:4%;
+  border-bottom: 1px solid white;
+  display:block;
+}
+
+/* When active, remove placeholder */
+
+.KeywordSearchAreaTextBox:active,
+.KeywordSearchAreaTextBox:focus{
+  outline:none;
+}
+
+.KeywordSearchAreaTextBox::placeholder{
+}
+
+.KeywordSearchAreaTextBox::placeholder{
+  transition: opacity 0.2s ease-in-out;
+}
+
+.KeywordSearchAreaTextBox:active::placeholder,
+.KeywordSearchAreaTextBox:focus::placeholder{
+  opacity:0;
+}
 
 
 /* Make an animation for first showing a Genre Item, which scales from 0 to 1, while also sending opacity from 0 to 1 */
