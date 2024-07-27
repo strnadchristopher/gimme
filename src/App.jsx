@@ -23,6 +23,7 @@ function App() {
   const [update_torrent_queue_timer, set_update_torrent_queue_timer] = useState(null);
   const [genre_list, set_genre_list] = useState([]);
   const [owned_movie_list, set_owned_movie_list] = useState([]);
+  const [previous_magnet_list, set_previous_magnet_list] = useState([]);
   const [last_search_url, set_last_search_url] = useState(null); // This value is set when we navigate to a search page, weather its query search, or genre search, or top_rated, etc
   const [background_image_url, set_background_image_url] = useState(null);
   const tv_genre_list = [
@@ -174,6 +175,7 @@ function App() {
   useEffect(() => {
     get_torrents_progress();
     get_owned_movies();
+    get_previous_magnet_list();
     // Add an event listener for ctrl + f, which will focus the search bar
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.key == 'f') {
@@ -195,8 +197,8 @@ function App() {
 
   const get_owned_movies = () => {
     // fetch('http://192.168.1.217:6970/owned_list')
-    // Above line but using the .env VITE_BACKEND_URL variable which includes the port
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/owned_list`)
+    // Above line but using the .env VITE_SERVER_URL variable which includes the port
+    fetch(`${import.meta.env.VITE_SERVER_URL}/owned_list`)
       .then(res => res.json())
       .then(data => {
         console.log("Owned Movie List:")
@@ -207,9 +209,7 @@ function App() {
 
   const update_owned_list = (id) => {
     console.log("Adding movie to owned list: ", id)
-    // fetch('http://192.168.1.217:6970/update_owned_list', {
-    // Above line but using the .env VITE_BACKEND_URL variable which includes the port
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/update_owned_list`, {
+    fetch(`${import.meta.env.VITE_SERVER_URL}/update_owned_list`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -219,6 +219,31 @@ function App() {
       .then(res => res.json())
       .then(data => {
         set_owned_movie_list(data)
+      })
+  }
+
+  const get_previous_magnet_list = () => {
+    fetch(`${import.meta.env.VITE_SERVER_URL}/previous_magnet_list`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("Previous Magnet List:")
+        console.log(data)
+        set_previous_magnet_list(data)
+      })
+  }
+
+  const update_previous_magnet_list = (magnet) => {
+    console.log("Adding magnet to previous magnet list: ", magnet)
+    fetch(`${import.meta.env.VITE_SERVER_URL}/update_previous_magnet_list`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ magnet: magnet })
+    })
+      .then(res => res.json())
+      .then(data => {
+        set_previous_magnet_list(data)
       })
   }
 
@@ -238,8 +263,8 @@ function App() {
     // We call the same endpoint as before, but with /torrents
     // We can use this data to see how far along our torrents are in downloading
     // fetch('http://192.168.1.217:6970/torrents')
-    // Above line but using the .env VITE_BACKEND_URL variable which includes the port
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/torrents`)
+    // Above line but using the .env VITE_SERVER_URL variable which includes the port
+    fetch(`${import.meta.env.VITE_SERVER_URL}/torrents`)
       .then(res => res.json())
       .then(data => {
         set_torrent_queue_data(data)
@@ -292,6 +317,8 @@ function App() {
         owned_movie_list={owned_movie_list}
         set_last_search_url={set_last_search_url}
         last_search_url={last_search_url}
+        update_previous_magnet_list={update_previous_magnet_list}
+        previous_magnet_list={previous_magnet_list}
       />
     </>
   )
@@ -422,6 +449,8 @@ function AnimatedRoutes(props) {
           update_owned_list={props.update_owned_list}
           owned_movie_list={props.owned_movie_list}
           last_search_url={props.last_search_url}
+          update_previous_magnet_list={props.update_previous_magnet_list}
+          previous_magnet_list={props.previous_magnet_list}
         />}
       />
       <Route path="/torrents" element={

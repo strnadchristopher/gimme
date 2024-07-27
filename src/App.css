@@ -467,6 +467,7 @@ body {
   overscroll-behavior-y: contain;
   background: none;
   background:rgba(0, 0, 0, .5);
+  padding-bottom:10vh;
 }
 
 .MovieDetailsModalBody .MovieCardTilt {
@@ -498,7 +499,8 @@ body {
 
 .TorrentItem {
   padding: 5px;
-  background: #333;
+  margin-bottom:1vh;
+  border-radius:15px;
   cursor: pointer;
   font-size: 1em;
   height: auto;
@@ -508,9 +510,14 @@ body {
   /* Make sure this doesnt force parent container to expand either */
   box-sizing: border-box;
   transition: background 0.3s ease-in-out, transform 0.3s ease-in-out;
-  border-bottom: 1px solid white;
+  border: 1px solid white;
+  /* give it a box shadow so its floating */
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
+.TorrentItemPreviouslyDownloaded{
+  background:rgba(255, 255, 255, 0.5);
+}
 
 .TorrentItemName {
   /* Newline if text overflows container */
@@ -672,6 +679,7 @@ body {
     border-radius: 15px;
     min-width: 50%;
     min-width: 400px;
+    min-width:80vw;
     border-radius: 0;
   }
 

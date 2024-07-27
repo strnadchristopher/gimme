@@ -44,8 +44,8 @@ function TorrentQueueItem(props) {
   return <div className="TorrentQueueItem" onClick={() => {
     // Clicking on a torrent queue item should send a request to the server to resume this download
     // fetch(`http://192.168.1.217:6970/resume`, {
-    // Same as above but using the VITE_BACKEND_URL
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/resume`, {
+    // Same as above but using the VITE_SERVER_URL
+    fetch(`${import.meta.env.VITE_SERVER_URL}/resume`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
